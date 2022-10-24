@@ -29,10 +29,25 @@ For this particular project I have chosen **Spring** framework with its project 
 
 ## Linting
 
-### Python code
+### Java code
 
 For this project I used **Sonarlint** linter which can be added as a plugin to all popular java IDEs
 
 ### Markdown
 
 As **Markdown linter** I used pycharm plugin **Markdown**
+
+## Testing
+
+For this application I used [Mockito](https://javadoc.io/doc/org.mockito/mockito-core/latest/org/mockito/Mockito.html) 
+and [JUnit](https://junit.org/junit5/docs/current/user-guide/) which are both Java testing frameworks
+
+### Best Practices
+
+* **test** directory added with proper package structure for tests
+* only necessary imports are present inside tests
+* no _"overtesting"_ as only single `moscowTime()` method from TimeService was tested for proper work
+* **ApplicationContext** wasn't used in tests as we are testing only a service layer without any interactions
+with another layers
+* if any other layer will be injected to TimeService, with it can be mocked
+with **Mockito** framework in order not to raise whole **ApplicationContext** from Spring

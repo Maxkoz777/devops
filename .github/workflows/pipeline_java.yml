@@ -1,0 +1,73 @@
+name: Lab3 CI pipeline
+
+on:
+   push:
+     paths:
+       - app_java/**
+       - .github/workflows/pipeline_java.yml
+
+jobs:
+  build:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: "./app_java"
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'adopt'
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**./app_java/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      - name: Build with Maven
+        run: mvn --batch-mode --update-snapshots package
+
+  
+  security:
+     name: Snyk
+     runs-on: ubuntu-latest
+     timeout-minutes: 10
+     defaults:
+       run:
+         working-directory: "./app_java"
+     steps:
+       - uses: actions/checkout@v3
+       - uses: snyk/actions/setup@master
+       - name: Vulnerabilities check
+         run: snyk test
+         env:
+           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: "./app_java"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: "{{defaultContext}}:app_java"
+          file: ./Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/moscow_time_java:latest
